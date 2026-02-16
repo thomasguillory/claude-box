@@ -890,7 +890,7 @@ fi
 echo ""
 echo "   [1/5] Context7 (documentation lookup)..."
 if ! claude mcp list 2>/dev/null | grep -q "context7"; then
-    claude mcp add context7 -- npx -y @upstash/context7-mcp
+    claude mcp add --scope user context7 -- npx -y @upstash/context7-mcp
     echo "   ✅ Context7 enregistré"
 else
     echo "   ✅ Context7 déjà enregistré"
@@ -900,7 +900,7 @@ fi
 echo ""
 echo "   [2/5] Sequential-Thinking (multi-step reasoning)..."
 if ! claude mcp list 2>/dev/null | grep -q "sequential-thinking"; then
-    claude mcp add sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
+    claude mcp add --scope user sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
     echo "   ✅ Sequential-Thinking enregistré"
 else
     echo "   ✅ Sequential-Thinking déjà enregistré"
@@ -910,7 +910,7 @@ fi
 echo ""
 echo "   [3/5] Serena (semantic code understanding)..."
 if ! claude mcp list 2>/dev/null | grep -q "serena"; then
-    claude mcp add serena -- uvx --from git+https://github.com/oraios/serena serena start-mcp-server --project /home/dev/workspace
+    claude mcp add --scope user serena -- uvx --from git+https://github.com/oraios/serena serena start-mcp-server --project /home/dev/workspace
     echo "   ✅ Serena enregistré"
 else
     echo "   ✅ Serena déjà enregistré"
@@ -920,7 +920,7 @@ fi
 echo ""
 echo "   [4/5] Playwright MCP (browser automation - headless)..."
 if ! claude mcp list 2>/dev/null | grep -q "playwright"; then
-    claude mcp add playwright -- npx @playwright/mcp@latest --headless --browser chromium
+    claude mcp add --scope user playwright -- npx @playwright/mcp@latest --headless --browser chromium
     echo "   ✅ Playwright enregistré (headless mode)"
 else
     echo "   ✅ Playwright déjà enregistré"
@@ -930,7 +930,7 @@ fi
 echo ""
 echo "   [5/5] Chrome DevTools MCP (browser debugging - headless)..."
 if ! claude mcp list 2>/dev/null | grep -q "chrome-devtools"; then
-    claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest --headless --executablePath /usr/bin/chromium --no-sandbox
+    claude mcp add --scope user chrome-devtools -- npx chrome-devtools-mcp@latest --headless --executablePath /usr/bin/chromium --no-sandbox
     echo "   ✅ Chrome DevTools enregistré (headless mode)"
 else
     echo "   ✅ Chrome DevTools déjà enregistré"
