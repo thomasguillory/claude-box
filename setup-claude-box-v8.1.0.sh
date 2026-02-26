@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🚀 Setup Claude Box v8.0.0 - Zsh + Local MCP Servers"
-echo "===================================================="
+echo "🚀 Setup Claude Box v8.1.0 - Tailscale SSH + Local MCP Servers"
+echo "=============================================================="
 echo ""
 echo "📦 MCP Servers inclus:"
 echo "   - Context7 (documentation lookup)"
@@ -43,27 +43,7 @@ if ! command -v curl &> /dev/null; then
     exit 1
 fi
 
-# Ask for SSH public key (from the client machine that will connect)
-echo "🔑 Clé SSH publique"
-echo "   Pour te connecter au container, colle ta clé publique."
-echo "   (Sur ta machine cliente: cat ~/.ssh/id_ed25519.pub)"
-echo ""
-read -p "Colle ta clé publique (ssh-...): " SSH_PUBLIC_KEY
-
-if [[ -z "$SSH_PUBLIC_KEY" ]]; then
-    echo "❌ Clé SSH requise pour continuer."
-    exit 1
-fi
-
-if [[ ! "$SSH_PUBLIC_KEY" =~ ^ssh- ]]; then
-    echo "⚠️  Cette clé ne semble pas valide (doit commencer par 'ssh-')"
-    read -p "Continuer quand même ? [y/N]: " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
-fi
-echo "✅ Clé SSH enregistrée"
+echo "🔐 Connexion via Tailscale SSH (pas besoin de clés SSH !)"
 
 # =============================================================================
 # DOCKER CHECK & INSTALL
@@ -751,8 +731,9 @@ fi
 
 tailscale status > /dev/null 2>&1 && echo "📍 IP: \$(tailscale ip -4)"
 
-echo "🔐 SSH..."
-/usr/sbin/sshd
+echo "🔐 Activation Tailscale SSH..."
+tailscale set --ssh
+echo "✅ Tailscale SSH activé (connexion sans clé SSH)"
 
 # Vérification environnement MCP
 echo "🔌 Vérification environnement MCP..."
@@ -767,9 +748,8 @@ else
     echo "   ⚠️  Chromium headless: échec"
 fi
 
-[ ! -f /home/dev/.ssh-keys/id_ed25519 ] && echo "⚠️  Lance ~/first-run.sh"
-
 echo "✅ Container prêt!"
+echo "   💡 Première connexion: lance ~/first-run.sh"
 exec tail -f /dev/null
 ENTRYPOINT_END
 
@@ -1010,7 +990,6 @@ services:
       - /dev/net/tun:/dev/net/tun
     shm_size: '2gb'
     volumes:
-      - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ${INSTANCE_NAME}_workspace:/home/dev/workspace
       - ${INSTANCE_NAME}_claude-config:/home/dev/.claude
       - ${INSTANCE_NAME}_claude-data:/home/dev/.claude-data
@@ -1136,10 +1115,6 @@ esac
 # =============================================================================
 # BUILD & LAUNCH
 # =============================================================================
-# Write the SSH public key to authorized_keys
-echo "$SSH_PUBLIC_KEY" > authorized_keys
-chmod 644 authorized_keys
-
 echo ""
 echo "📦 Build de l'image Docker..."
 docker compose build
@@ -1205,11 +1180,11 @@ if [ -n "$TAILSCALE_IP" ]; then
 echo "🌐 Tailscale IP: $TAILSCALE_IP"
 fi
 echo ""
-echo "Connexion:"
-echo "  ssh dev@claude-box-${INSTANCE_NAME}  (via Tailscale)"
-if [ -n "$TAILSCALE_IP" ]; then
-echo "  ssh dev@$TAILSCALE_IP"
-fi
+echo "🔐 Connexion (Tailscale SSH - pas besoin de clés SSH !):"
+echo "  ssh dev@claude-box-${INSTANCE_NAME}"
+echo ""
+echo "  Tailscale SSH utilise ton identité Tailscale."
+echo "  Assure-toi d'être connecté au même tailnet."
 echo ""
 echo "Première connexion:"
 echo "  ~/first-run.sh"
