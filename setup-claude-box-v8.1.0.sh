@@ -720,20 +720,46 @@ fi
 echo "🌐 Tailscale..."
 mkdir -p /var/run/tailscale
 tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
-sleep 2
 
-if tailscale status > /dev/null 2>&1; then
-    echo "✅ Tailscale connecté"
+# Attendre que tailscaled soit prêt
+echo "   Attente de tailscaled..."
+for i in \$(seq 1 30); do
+    tailscale status > /dev/null 2>&1 && break
+    sleep 1
+done
+
+# Authentification si nécessaire
+if ! tailscale status 2>&1 | grep -q "Logged out"; then
+    echo "✅ Tailscale déjà connecté"
 else
-    [ -n "\$TAILSCALE_AUTHKEY" ] && tailscale up --authkey="\$TAILSCALE_AUTHKEY" --hostname="claude-box-${INSTANCE_NAME}" || \
-        echo "⚠️  tailscale up --hostname=claude-box-${INSTANCE_NAME}"
+    if [ -n "\$TAILSCALE_AUTHKEY" ]; then
+        echo "   Authentification avec authkey..."
+        tailscale up --authkey="\$TAILSCALE_AUTHKEY" --hostname="claude-box-${INSTANCE_NAME}"
+    else
+        echo "⚠️  Tailscale non connecté. Exécute manuellement:"
+        echo "   docker exec -it claude-box-${INSTANCE_NAME} tailscale up --hostname=claude-box-${INSTANCE_NAME}"
+    fi
 fi
 
-tailscale status > /dev/null 2>&1 && echo "📍 IP: \$(tailscale ip -4)"
-
+# Attendre connexion effective avant d'activer SSH
 echo "🔐 Activation Tailscale SSH..."
-tailscale set --ssh
-echo "✅ Tailscale SSH activé (connexion sans clé SSH)"
+TAILSCALE_CONNECTED=false
+for i in \$(seq 1 60); do
+    if tailscale status 2>&1 | grep -qE "^100\\."; then
+        TAILSCALE_CONNECTED=true
+        break
+    fi
+    sleep 2
+done
+
+if [ "\$TAILSCALE_CONNECTED" = true ]; then
+    tailscale set --ssh
+    echo "✅ Tailscale SSH activé"
+    echo "📍 IP: \$(tailscale ip -4)"
+else
+    echo "⚠️  Tailscale non connecté après 2min. SSH non activé."
+    echo "   Après connexion manuelle: tailscale set --ssh"
+fi
 
 # Vérification environnement MCP
 echo "🔌 Vérification environnement MCP..."
